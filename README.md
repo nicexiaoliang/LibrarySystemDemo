@@ -1,2 +1,2 @@
 # LibrarySystemDemo
-图书管理系统
+用springboot+mybatis+mysql+thymeleaf开发的图书管理系统
