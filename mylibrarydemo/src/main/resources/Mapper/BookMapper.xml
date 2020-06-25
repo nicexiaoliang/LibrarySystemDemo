@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mylibrarydemo.dao.BookMapper">
+    <select id="getlist" resultType="com.example.mylibrarydemo.entry.BookList">
+        select * from booklist
+    </select>
+
+    <select id="getListByBname" parameterType="String" resultType="com.example.mylibrarydemo.entry.BookList">
+        select * from booklist where bname like concat("%","#{bname}","%");
+    </select>
+
+    <select id="getRes" resultType="com.example.mylibrarydemo.entry.Book" parameterType="String">
+         select * from book where isbn=#{ISBN} and (state=0 or (state=2 and book_id not in (select reservation.book_id from reservation))) order by state
+    </select>
+
+    <!--获取某一个用户的预约情况-->
+    <select id="getResById" parameterType="com.example.mylibrarydemo.entry.User" resultType="com.example.mylibrarydemo.entry.ReservationDetail">
+        SELECT reservation_id,bname,book.book_id,deadline,user_name FROM reservation JOIN
+book ON reservation.`book_id`=book.`book_id` JOIN booklist
+ON book.`ISBN`=booklist.`ISBN` JOIN reader ON reader.`user_id`=reservation.`user_id`
+WHERE reservation.`user_id`=#{user.userId}
+    </select>
+
+    <select id="processRes" resultType="Integer" statementType="CALLABLE">
+        set @result=0;
+        call addRes(#{user.userId},#{isbn},@result);
+        select @result;
+    </select>
+
+    <insert id="addBookList">
+        call addBook(#{booklist.isbn}, #{booklist.bname}, #{booklist.publisher}, #{booklist.writer},
+                     #{booklist.ptime}, #{booklist.number}, #{booklist.operator}, #{location}, #{state})
+    </insert>
+
+    <select id="getReslist" resultMap="resmap">
+        select * from reservation_detail
+    </select>
+
+    <resultMap id="resmap" type="com.example.mylibrarydemo.entry.ReservationDetail">
+        <id property="reservationId" column="reservation_id"></id>
+        <result property="bname" column="bname"></result>
+        <result property="deadline" column="deadline"></result>
+        <result property="userName" column="user_name"></result>
+    </resultMap>
+
+    <select id="getBorlist" resultMap="borDetail">
+        select * from borrow_detail
+    </select>
+
+    <resultMap id="borDetail" type="com.example.mylibrarydemo.entry.BorrowDetail">
+        <id property="borrowId" column="borrow_id"></id>
+        <result property="bname" column="bname"></result>
+        <result property="userName" column="user_name"></result>
+        <result property="btime" column="btime"></result>
+        <result property="deadline" column="deadline"></result>
+        <result property="rtime" column="rtime"></result>
+    </resultMap>
+
+
+    <select id="insertBorrow">
+        call insertBorrow(#{rid},#{op})
+    </select>
+
+    <select id="getBorById" resultMap="borDetail">
+      SELECT borrow_detail.* FROM borrow_detail JOIN borrow ON
+borrow_detail.`borrow_id`=borrow.`borrow_id` WHERE user_id =#{user.userId}
+    </select>
+
+    <select id="returnBookById">
+        call returnBook(#{borrow.borrowId})
+    </select>
+
+
+</mapper>
